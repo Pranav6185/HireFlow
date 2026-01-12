@@ -7,6 +7,7 @@ const Student = require('../models/Student');
 const Offer = require('../models/Offer');
 const College = require('../models/College');
 const { APPLICATION_STATUS, PARTICIPATION_STATUS } = require('../utils/constants');
+const { notifyShortlist, notifyOfferIssued } = require('../services/emailService');
 
 // Get company dashboard
 exports.getDashboard = async (req, res, next) => {
@@ -326,6 +327,11 @@ exports.shortlistApplicants = async (req, res, next) => {
     const targetStatus = status || APPLICATION_STATUS.SHORTLISTED;
 
     // Update applications
+    const applications = await Application.find({
+      _id: { $in: applicationIds },
+      driveId: drive._id,
+    }).select('studentId');
+
     const result = await Application.updateMany(
       {
         _id: { $in: applicationIds },
@@ -342,6 +348,17 @@ exports.shortlistApplicants = async (req, res, next) => {
         },
       }
     );
+
+    // Notify shortlisted students (best-effort)
+    if (targetStatus === APPLICATION_STATUS.SHORTLISTED) {
+      for (const app of applications) {
+        await notifyShortlist({
+          userId: app.studentId,
+          driveRole: drive.role,
+          companyName: company.name,
+        });
+      }
+    }
 
     res.json({
       message: `${result.modifiedCount} applicants updated`,
@@ -469,7 +486,7 @@ exports.issueOffers = async (req, res, next) => {
       }
 
       // Update application status
-      await Application.findByIdAndUpdate(applicationId, {
+      const updatedApp = await Application.findByIdAndUpdate(applicationId, {
         $set: { status: APPLICATION_STATUS.OFFERED },
         $push: {
           timeline: {
@@ -478,6 +495,13 @@ exports.issueOffers = async (req, res, next) => {
             updatedAt: new Date(),
           },
         },
+      }, { new: true });
+
+      // Notify student about offer (best-effort)
+      await notifyOfferIssued({
+        userId: updatedApp.studentId,
+        driveRole: drive.role,
+        companyName: company.name,
       });
 
       offers.push(offer);
