@@ -12,6 +12,10 @@ import TPODashboard from '../pages/college/TPODashboard';
 import StudentManagement from '../pages/college/StudentManagement';
 import DriveParticipation from '../pages/college/DriveParticipation';
 import PlacementRecords from '../pages/college/PlacementRecords';
+import CompanyDashboard from '../pages/company/CompanyDashboard';
+import CreateDrive from '../pages/company/CreateDrive';
+import ApplicantScreening from '../pages/company/ApplicantScreening';
+import OfferManagement from '../pages/company/OfferManagement';
 import { useAuth } from '../context/AuthContext';
 
 const HomeRedirect = () => {
@@ -23,6 +27,10 @@ const HomeRedirect = () => {
 
   if (user.role === 'college') {
     return <Navigate to="/college/dashboard" replace />;
+  }
+
+  if (user.role === 'company') {
+    return <Navigate to="/company/dashboard" replace />;
   }
 
   // default: student
@@ -108,6 +116,48 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRole="college">
             <PlacementRecords />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Company Routes */}
+      <Route
+        path="/company/dashboard"
+        element={
+          <ProtectedRoute requiredRole="company">
+            <CompanyDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/company/drives"
+        element={
+          <ProtectedRoute requiredRole="company">
+            <div>Drives List (To be implemented)</div>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/company/create-drive"
+        element={
+          <ProtectedRoute requiredRole="company">
+            <CreateDrive />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/company/drives/:driveId/applicants"
+        element={
+          <ProtectedRoute requiredRole="company">
+            <ApplicantScreening />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/company/drives/:driveId/offers"
+        element={
+          <ProtectedRoute requiredRole="company">
+            <OfferManagement />
           </ProtectedRoute>
         }
       />

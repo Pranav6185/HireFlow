@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema(
         return this.role === 'college';
       },
     },
+    // For company users, link to the Company document
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: function () {
+        return this.role === 'company';
+      },
+    },
     refreshToken: {
       type: String,
       default: null,

@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Student = require('../models/Student');
+const Company = require('../models/Company');
 const { TOKEN_EXPIRY } = require('../utils/constants');
 
 // Generate tokens
@@ -112,10 +113,13 @@ exports.login = async (req, res, next) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    // Get student profile if role is student
+    // Get profile based on role
     let student = null;
+    let company = null;
     if (user.role === 'student') {
       student = await Student.findOne({ userId: user._id });
+    } else if (user.role === 'company') {
+      company = await Company.findById(user.companyId);
     }
 
     res.json({
@@ -128,6 +132,7 @@ exports.login = async (req, res, next) => {
         role: user.role,
       },
       ...(student && { student: { id: student._id, name: student.name } }),
+      ...(company && { company: { id: company._id, name: company.name } }),
     });
   } catch (error) {
     next(error);
@@ -178,6 +183,8 @@ exports.getCurrentUser = async (req, res, next) => {
     let profile = null;
     if (user.role === 'student') {
       profile = await Student.findOne({ userId: user._id });
+    } else if (user.role === 'company') {
+      profile = await Company.findById(user.companyId);
     }
 
     res.json({

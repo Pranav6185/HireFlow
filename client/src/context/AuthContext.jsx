@@ -14,6 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [student, setStudent] = useState(null);
+  const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +32,11 @@ export const AuthProvider = ({ children }) => {
       const data = await authService.getCurrentUser();
       setUser(data.user);
       if (data.profile) {
-        setStudent(data.profile);
+        if (data.user.role === 'student') {
+          setStudent(data.profile);
+        } else if (data.user.role === 'company') {
+          setCompany(data.profile);
+        }
       }
     } catch (error) {
       console.error('Failed to load user:', error);
@@ -49,6 +54,9 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
     if (data.student) {
       setStudent(data.student);
+    }
+    if (data.company) {
+      setCompany(data.company);
     }
     return data;
   };
@@ -74,12 +82,14 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('refreshToken');
       setUser(null);
       setStudent(null);
+      setCompany(null);
     }
   };
 
   const value = {
     user,
     student,
+    company,
     loading,
     login,
     signup,

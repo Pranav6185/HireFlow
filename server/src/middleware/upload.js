@@ -2,8 +2,8 @@ const multer = require('multer');
 const cloudinary = require('../config/cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// Configure Cloudinary storage
-const storage = new CloudinaryStorage({
+// Configure Cloudinary storage for resumes
+const resumeStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'hireflow/resumes',
@@ -12,6 +12,20 @@ const storage = new CloudinaryStorage({
     public_id: (req, file) => {
       // Generate unique filename: student-{userId}-{timestamp}
       return `student-${req.user._id}-${Date.now()}`;
+    },
+  },
+});
+
+// Configure Cloudinary storage for brochures and offer letters
+const documentStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'hireflow/documents',
+    allowed_formats: ['pdf'],
+    resource_type: 'raw',
+    public_id: (req, file) => {
+      const type = req.path.includes('brochure') ? 'brochure' : 'offer';
+      return `${type}-${req.params.driveId || req.user._id}-${Date.now()}`;
     },
   },
 });
@@ -25,14 +39,23 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Multer configuration
+// Multer configurations
 const upload = multer({
-  storage: storage,
+  storage: resumeStorage,
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
 });
 
+const uploadDocument = multer({
+  storage: documentStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit for documents
+  },
+});
+
 module.exports = upload;
+module.exports.uploadDocument = uploadDocument;
 

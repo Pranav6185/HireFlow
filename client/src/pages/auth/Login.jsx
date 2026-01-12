@@ -19,6 +19,8 @@ const Login = () => {
       const data = await login(email, password);
       if (data.user.role === 'college') {
         navigate('/college/dashboard');
+      } else if (data.user.role === 'company') {
+        navigate('/company/dashboard');
       } else {
         navigate('/student/dashboard');
       }
