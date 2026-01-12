@@ -8,6 +8,8 @@ const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/student');
 const driveRoutes = require('./routes/drive');
 const applicationRoutes = require('./routes/application');
+const collegeRoutes = require('./routes/college');
+const placementRoutes = require('./routes/placement');
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/drives', driveRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/college', collegeRoutes);
+app.use('/api/placement', placementRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
