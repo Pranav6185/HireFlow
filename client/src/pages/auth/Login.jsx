@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import ErrorBanner from '../../components/common/ErrorBanner';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -35,7 +36,7 @@ const Login = () => {
     <div style={styles.container}>
       <div style={styles.card}>
         <h2 style={styles.title}>Login to HireFlow</h2>
-        {error && <div style={styles.error}>{error}</div>}
+        <ErrorBanner error={error} onDismiss={() => setError('')} />
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.formGroup}>
             <label htmlFor="email" style={styles.label}>
@@ -126,13 +127,6 @@ const styles = {
     fontSize: '1rem',
     cursor: 'pointer',
     marginTop: '1rem',
-  },
-  error: {
-    backgroundColor: '#fee',
-    color: '#c33',
-    padding: '0.75rem',
-    borderRadius: '4px',
-    marginBottom: '1rem',
   },
   link: {
     textAlign: 'center',

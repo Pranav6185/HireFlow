@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [student, setStudent] = useState(null);
   const [company, setCompany] = useState(null);
+  const [college, setCollege] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,6 +37,8 @@ export const AuthProvider = ({ children }) => {
           setStudent(data.profile);
         } else if (data.user.role === 'company') {
           setCompany(data.profile);
+        } else if (data.user.role === 'college') {
+          setCollege(data.profile);
         }
       }
     } catch (error) {
@@ -58,6 +61,9 @@ export const AuthProvider = ({ children }) => {
     if (data.company) {
       setCompany(data.company);
     }
+    if (data.college) {
+      setCollege(data.college);
+    }
     return data;
   };
 
@@ -68,6 +74,28 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
     if (data.student) {
       setStudent(data.student);
+    }
+    return data;
+  };
+
+  const signupCompany = async (companyData) => {
+    const data = await authService.signupCompany(companyData);
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    setUser(data.user);
+    if (data.company) {
+      setCompany(data.company);
+    }
+    return data;
+  };
+
+  const signupCollege = async (collegeData) => {
+    const data = await authService.signupCollege(collegeData);
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    setUser(data.user);
+    if (data.college) {
+      setCollege(data.college);
     }
     return data;
   };
@@ -83,6 +111,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setStudent(null);
       setCompany(null);
+      setCollege(null);
     }
   };
 
@@ -90,9 +119,12 @@ export const AuthProvider = ({ children }) => {
     user,
     student,
     company,
+    college,
     loading,
     login,
     signup,
+    signupCompany,
+    signupCollege,
     logout,
     loadUser,
     isAuthenticated: !!user,

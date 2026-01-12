@@ -35,7 +35,14 @@ const CreateDrive = () => {
   const loadColleges = async () => {
     try {
       const data = await companyService.getColleges();
-      setColleges(data);
+      // Handle both paginated and non-paginated responses
+      if (data.data && Array.isArray(data.data)) {
+        setColleges(data.data);
+      } else if (Array.isArray(data)) {
+        setColleges(data);
+      } else {
+        setColleges([]);
+      }
     } catch (err) {
       setError('Failed to load colleges');
     }

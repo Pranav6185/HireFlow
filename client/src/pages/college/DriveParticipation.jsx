@@ -14,7 +14,14 @@ const DriveParticipation = () => {
       setLoading(true);
       setError('');
       const res = await collegeService.getDrives();
-      setInvites(res);
+      // Handle both paginated and non-paginated responses
+      if (res.data && Array.isArray(res.data)) {
+        setInvites(res.data);
+      } else if (Array.isArray(res)) {
+        setInvites(res);
+      } else {
+        setInvites([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load drives');
     } finally {

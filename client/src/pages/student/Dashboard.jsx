@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const Dashboard = () => {
   const { user, student, logout } = useAuth();
@@ -24,7 +25,11 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <div style={styles.container}>Loading...</div>;
+    return (
+      <div style={styles.container}>
+        <LoadingSpinner message="Loading dashboard..." />
+      </div>
+    );
   }
 
   return (

@@ -12,6 +12,9 @@ exports.getEligibleDrives = async (req, res, next) => {
       return res.status(404).json({ message: 'Student profile not found' });
     }
 
+    const { parsePagination, createPaginatedResponse } = require('../utils/pagination');
+    const { page, limit } = parsePagination(req);
+
     // Find drives where:
     // 1. Drive is active
     // 2. College has accepted participation
@@ -50,7 +53,13 @@ exports.getEligibleDrives = async (req, res, next) => {
       });
     }
 
-    res.json(eligibleDrives);
+    // Apply pagination
+    const total = eligibleDrives.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedDrives = eligibleDrives.slice(startIndex, endIndex);
+
+    res.json(createPaginatedResponse(paginatedDrives, total, page, limit));
   } catch (error) {
     next(error);
   }

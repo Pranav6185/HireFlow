@@ -42,6 +42,9 @@ exports.getStudents = async (req, res, next) => {
     const collegeId = req.user.collegeId;
     const { verified, search } = req.query;
 
+    const { parsePagination, createPaginatedResponse } = require('../utils/pagination');
+    const { page, limit, skip } = parsePagination(req);
+
     const query = { collegeId };
     if (verified === 'true') query.isVerified = true;
     if (verified === 'false') query.isVerified = false;
@@ -53,8 +56,13 @@ exports.getStudents = async (req, res, next) => {
       ];
     }
 
-    const students = await Student.find(query).sort({ name: 1 });
-    res.json(students);
+    const total = await Student.countDocuments(query);
+    const students = await Student.find(query)
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(limit);
+    
+    res.json(createPaginatedResponse(students, total, page, limit));
   } catch (error) {
     next(error);
   }

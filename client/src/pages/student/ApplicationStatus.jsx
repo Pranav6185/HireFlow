@@ -18,7 +18,14 @@ const ApplicationStatus = () => {
   const loadApplications = async () => {
     try {
       const data = await applicationService.getMyApplications();
-      setApplications(data);
+      // Handle both paginated and non-paginated responses
+      if (data.data && Array.isArray(data.data)) {
+        setApplications(data.data);
+      } else if (Array.isArray(data)) {
+        setApplications(data);
+      } else {
+        setApplications([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load applications');
     } finally {

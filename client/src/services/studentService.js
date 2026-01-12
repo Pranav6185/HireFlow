@@ -29,8 +29,8 @@ export const studentService = {
 };
 
 export const driveService = {
-  getEligibleDrives: async () => {
-    const response = await apiClient.get('/drives/eligible');
+  getEligibleDrives: async (page = 1, limit = 10) => {
+    const response = await apiClient.get(`/drives/eligible?page=${page}&limit=${limit}`);
     return response.data;
   },
 
@@ -46,8 +46,8 @@ export const applicationService = {
     return response.data;
   },
 
-  getMyApplications: async () => {
-    const response = await apiClient.get('/applications/my-applications');
+  getMyApplications: async (page = 1, limit = 10) => {
+    const response = await apiClient.get(`/applications/my-applications?page=${page}&limit=${limit}`);
     return response.data;
   },
 

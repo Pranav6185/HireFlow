@@ -6,6 +6,16 @@ export const authService = {
     return response.data;
   },
 
+  signupCompany: async (companyData) => {
+    const response = await apiClient.post('/auth/signup/company', companyData);
+    return response.data;
+  },
+
+  signupCollege: async (collegeData) => {
+    const response = await apiClient.post('/auth/signup/college', collegeData);
+    return response.data;
+  },
+
   login: async (email, password) => {
     const response = await apiClient.post('/auth/login', { email, password });
     return response.data;

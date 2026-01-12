@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { driveService } from '../../services/studentService';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import EmptyState from '../../components/common/EmptyState';
+import ErrorBanner from '../../components/common/ErrorBanner';
+import Pagination from '../../components/common/Pagination';
 
 const DrivesList = () => {
   const { logout } = useAuth();
@@ -9,15 +13,27 @@ const DrivesList = () => {
   const [drives, setDrives] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pagination, setPagination] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     loadDrives();
-  }, []);
+  }, [currentPage]);
 
   const loadDrives = async () => {
+    setLoading(true);
+    setError('');
     try {
-      const data = await driveService.getEligibleDrives();
-      setDrives(data);
+      const data = await driveService.getEligibleDrives(currentPage, pageSize);
+      // Handle both paginated and non-paginated responses
+      if (data.data && data.pagination) {
+        setDrives(data.data);
+        setPagination(data.pagination);
+      } else {
+        setDrives(Array.isArray(data) ? data : []);
+        setPagination(null);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load drives');
     } finally {
@@ -25,9 +41,10 @@ const DrivesList = () => {
     }
   };
 
-  if (loading) {
-    return <div style={styles.container}>Loading...</div>;
-  }
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div style={styles.container}>
@@ -45,30 +62,44 @@ const DrivesList = () => {
 
       <div style={styles.content}>
         <h2>Available Hiring Drives</h2>
-        {error && <div style={styles.error}>{error}</div>}
+        <ErrorBanner error={error} onDismiss={() => setError('')} />
         
-        {drives.length === 0 ? (
-          <div style={styles.empty}>
-            <p>No drives available at the moment.</p>
-            <p style={styles.note}>Drives will appear here once companies create them and invite your college.</p>
-          </div>
+        {loading ? (
+          <LoadingSpinner message="Loading drives..." />
+        ) : drives.length === 0 ? (
+          <EmptyState
+            icon="📋"
+            title="No Drives Available"
+            message="Drives will appear here once companies create them and invite your college."
+          />
         ) : (
-          <div style={styles.drivesGrid}>
-            {drives.map((drive) => (
-              <div key={drive._id} style={styles.driveCard}>
-                <h3>{drive.role}</h3>
-                <p>{drive.companyId?.name || 'Company'}</p>
-                {drive.ctc && <p>CTC: ₹{drive.ctc} LPA</p>}
-                {drive.stipend && <p>Stipend: ₹{drive.stipend}/month</p>}
-                {drive.hasApplied && (
-                  <p style={styles.appliedBadge}>✓ Applied</p>
-                )}
-                <Link to={`/student/drives/${drive._id}`} style={styles.viewBtn}>
-                  {drive.hasApplied ? 'View Application' : 'View Details'}
-                </Link>
-              </div>
-            ))}
-          </div>
+          <>
+            <div style={styles.drivesGrid}>
+              {drives.map((drive) => (
+                <div key={drive._id} style={styles.driveCard}>
+                  <h3>{drive.role}</h3>
+                  <p>{drive.companyId?.name || 'Company'}</p>
+                  {drive.ctc && <p>CTC: ₹{drive.ctc} LPA</p>}
+                  {drive.stipend && <p>Stipend: ₹{drive.stipend}/month</p>}
+                  {drive.hasApplied && (
+                    <p style={styles.appliedBadge}>✓ Applied</p>
+                  )}
+                  <Link to={`/student/drives/${drive._id}`} style={styles.viewBtn}>
+                    {drive.hasApplied ? 'View Application' : 'View Details'}
+                  </Link>
+                </div>
+              ))}
+            </div>
+            {pagination && (
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                pageSize={pagination.itemsPerPage}
+                totalItems={pagination.totalItems}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

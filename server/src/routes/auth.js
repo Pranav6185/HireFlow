@@ -21,8 +21,23 @@ const loginValidation = [
   body('password').notEmpty(),
 ];
 
+const companySignupValidation = [
+  body('email').isEmail().normalizeEmail(),
+  body('password').isLength({ min: 6 }),
+  body('name').trim().notEmpty(),
+];
+
+const collegeSignupValidation = [
+  body('email').isEmail().normalizeEmail(),
+  body('password').isLength({ min: 6 }),
+  body('name').trim().notEmpty(),
+  body('location').trim().notEmpty(),
+];
+
 // Routes
-router.post('/signup', signupValidation, authController.signup);
+router.post('/signup', signupValidation, authController.signup); // Student signup
+router.post('/signup/company', companySignupValidation, authController.signupCompany);
+router.post('/signup/college', collegeSignupValidation, authController.signupCollege);
 router.post('/login', loginValidation, authController.login);
 router.post('/refresh', authController.refreshToken);
 router.get('/me', authenticate, authController.getCurrentUser);

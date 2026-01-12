@@ -13,9 +13,6 @@ const placementRoutes = require('./routes/placement');
 const companyRoutes = require('./routes/company');
 const notificationRoutes = require('./routes/notification');
 const roundRoutes = require('./routes/round');
-const companyRoutes = require('./routes/company');
-const collegeRoutes = require('./routes/college');
-const placementRoutes = require('./routes/placement');
 
 const app = express();
 

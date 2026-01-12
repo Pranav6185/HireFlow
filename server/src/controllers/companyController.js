@@ -282,6 +282,9 @@ exports.getApplicants = async (req, res, next) => {
       return res.status(404).json({ message: 'Drive not found' });
     }
 
+    const { parsePagination, createPaginatedResponse } = require('../utils/pagination');
+    const { page, limit, skip } = parsePagination(req);
+
     // Build query
     const query = { driveId: drive._id };
     if (collegeId) {
@@ -291,19 +294,25 @@ exports.getApplicants = async (req, res, next) => {
       query.status = status;
     }
 
+    const total = await Application.countDocuments(query);
     const applications = await Application.find(query)
       .populate('studentId', 'name branch batch cgpa resumeLink')
       .populate('collegeId', 'name location')
-      .sort({ submittedAt: -1 });
+      .sort({ submittedAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    res.json(applications);
+    res.json(createPaginatedResponse(applications, total, page, limit));
   } catch (error) {
     next(error);
   }
 };
 
-// Shortlist applicants
+// Shortlist applicants (with atomic transaction)
 exports.shortlistApplicants = async (req, res, next) => {
+  const session = await Application.db.startSession();
+  session.startTransaction();
+  
   try {
     const { driveId } = req.params;
     const { applicationIds, status } = req.body;
@@ -311,27 +320,40 @@ exports.shortlistApplicants = async (req, res, next) => {
     const company = await Company.findById(user.companyId);
     
     if (!company) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: 'Company not found' });
     }
 
     const drive = await Drive.findById(driveId);
 
     if (!drive || drive.companyId.toString() !== company._id.toString()) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: 'Drive not found' });
     }
 
     if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: 'applicationIds must be a non-empty array' });
     }
 
     const targetStatus = status || APPLICATION_STATUS.SHORTLISTED;
 
-    // Update applications
+    // Verify all applications belong to this drive (data integrity check)
     const applications = await Application.find({
       _id: { $in: applicationIds },
       driveId: drive._id,
-    }).select('studentId');
+    }).session(session).select('studentId');
 
+    if (applications.length !== applicationIds.length) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Some applications do not belong to this drive' });
+    }
+
+    // Atomic bulk update
     const result = await Application.updateMany(
       {
         _id: { $in: applicationIds },
@@ -346,18 +368,23 @@ exports.shortlistApplicants = async (req, res, next) => {
             updatedAt: new Date(),
           },
         },
-      }
+      },
+      { session }
     );
 
-    // Notify shortlisted students (best-effort)
+    await session.commitTransaction();
+    session.endSession();
+
+    // Notify shortlisted students (best-effort, non-blocking)
     if (targetStatus === APPLICATION_STATUS.SHORTLISTED) {
-      for (const app of applications) {
-        await notifyShortlist({
+      // Fire and forget - don't block response
+      Promise.all(applications.map(app => 
+        notifyShortlist({
           userId: app.studentId,
           driveRole: drive.role,
           companyName: company.name,
-        });
-      }
+        }).catch(err => console.error('Email notification failed:', err))
+      )).catch(() => {}); // Ignore errors
     }
 
     res.json({
@@ -365,6 +392,8 @@ exports.shortlistApplicants = async (req, res, next) => {
       modifiedCount: result.modifiedCount,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };

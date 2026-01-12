@@ -28,7 +28,14 @@ const ApplicantScreening = () => {
       if (filters.collegeId) params.collegeId = filters.collegeId;
       if (filters.status) params.status = filters.status;
       const data = await companyService.getApplicants(driveId, params);
-      setApplicants(data);
+      // Handle both paginated and non-paginated responses
+      if (data.data && Array.isArray(data.data)) {
+        setApplicants(data.data);
+      } else if (Array.isArray(data)) {
+        setApplicants(data);
+      } else {
+        setApplicants([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load applicants');
     } finally {
@@ -320,16 +327,16 @@ const styles = {
     width: '100%',
     borderCollapse: 'collapse',
   },
-  table th: {
-    padding: '1rem',
-    textAlign: 'left',
-    borderBottom: '2px solid #eee',
-    backgroundColor: '#f9f9f9',
-  },
-  table td: {
-    padding: '1rem',
-    borderBottom: '1px solid #eee',
-  },
+  // table th: {
+  //   padding: '1rem',
+  //   textAlign: 'left',
+  //   borderBottom: '2px solid #eee',
+  //   backgroundColor: '#f9f9f9',
+  // },
+  // table td: {
+  //   padding: '1rem',
+  //   borderBottom: '1px solid #eee',
+  // },
   statusBadge: {
     padding: '0.25rem 0.75rem',
     borderRadius: '12px',

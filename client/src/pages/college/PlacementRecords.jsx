@@ -14,7 +14,14 @@ const PlacementRecords = () => {
       setLoading(true);
       setError('');
       const res = await placementService.getPlacements();
-      setRecords(res);
+      // Handle both paginated and non-paginated responses
+      if (res.data && Array.isArray(res.data)) {
+        setRecords(res.data);
+      } else if (Array.isArray(res)) {
+        setRecords(res);
+      } else {
+        setRecords([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load placements');
     } finally {

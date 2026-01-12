@@ -23,7 +23,14 @@ const OfferManagement = () => {
   const loadOffers = async () => {
     try {
       const data = await companyService.getOffers(driveId);
-      setOffers(data);
+      // Handle both paginated and non-paginated responses
+      if (data.data && Array.isArray(data.data)) {
+        setOffers(data.data);
+      } else if (Array.isArray(data)) {
+        setOffers(data);
+      } else {
+        setOffers([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load offers');
     } finally {
@@ -350,16 +357,16 @@ const styles = {
     width: '100%',
     borderCollapse: 'collapse',
   },
-  table th: {
-    padding: '1rem',
-    textAlign: 'left',
-    borderBottom: '2px solid #eee',
-    backgroundColor: '#f9f9f9',
-  },
-  table td: {
-    padding: '1rem',
-    borderBottom: '1px solid #eee',
-  },
+  // table th: {
+  //   padding: '1rem',
+  //   textAlign: 'left',
+  //   borderBottom: '2px solid #eee',
+  //   backgroundColor: '#f9f9f9',
+  // },
+  // table td: {
+  //   padding: '1rem',
+  //   borderBottom: '1px solid #eee',
+  // },
   linkInput: {
     width: '100%',
     padding: '0.5rem',

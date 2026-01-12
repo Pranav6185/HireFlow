@@ -3,6 +3,7 @@ const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Student = require('../models/Student');
 const Company = require('../models/Company');
+const College = require('../models/College');
 const { TOKEN_EXPIRY } = require('../utils/constants');
 
 // Generate tokens
@@ -116,10 +117,13 @@ exports.login = async (req, res, next) => {
     // Get profile based on role
     let student = null;
     let company = null;
+    let college = null;
     if (user.role === 'student') {
       student = await Student.findOne({ userId: user._id });
     } else if (user.role === 'company') {
       company = await Company.findById(user.companyId);
+    } else if (user.role === 'college') {
+      college = await College.findById(user.collegeId);
     }
 
     res.json({
@@ -133,6 +137,7 @@ exports.login = async (req, res, next) => {
       },
       ...(student && { student: { id: student._id, name: student.name } }),
       ...(company && { company: { id: company._id, name: company.name } }),
+      ...(college && { college: { id: college._id, name: college.name } }),
     });
   } catch (error) {
     next(error);
@@ -185,6 +190,8 @@ exports.getCurrentUser = async (req, res, next) => {
       profile = await Student.findOne({ userId: user._id });
     } else if (user.role === 'company') {
       profile = await Company.findById(user.companyId);
+    } else if (user.role === 'college') {
+      profile = await College.findById(user.collegeId);
     }
 
     res.json({
@@ -205,6 +212,127 @@ exports.logout = async (req, res, next) => {
       await user.save();
     }
     res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Company Signup
+exports.signupCompany = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password, name, domain, recruiterContacts } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // Create company
+    const company = new Company({
+      name,
+      domain,
+      recruiterContacts: recruiterContacts || [],
+    });
+    await company.save();
+
+    // Create user
+    const user = new User({
+      email,
+      password,
+      role: 'company',
+      companyId: company._id,
+    });
+    await user.save();
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user._id);
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.status(201).json({
+      message: 'Company registered successfully',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      company: {
+        id: company._id,
+        name: company.name,
+        domain: company.domain,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// College Signup
+exports.signupCollege = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password, name, location, departments, tpoContacts } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // Create college
+    const college = new College({
+      name,
+      location,
+      departments: departments || [],
+      tpoContacts: tpoContacts || [],
+    });
+    await college.save();
+
+    // Create user
+    const user = new User({
+      email,
+      password,
+      role: 'college',
+      collegeId: college._id,
+    });
+    await user.save();
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user._id);
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.status(201).json({
+      message: 'College registered successfully',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      college: {
+        id: college._id,
+        name: college.name,
+        location: college.location,
+      },
+    });
   } catch (error) {
     next(error);
   }

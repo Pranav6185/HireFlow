@@ -23,7 +23,14 @@ const StudentManagement = () => {
         params.verified = filterVerified;
       }
       const res = await collegeService.getStudents(params);
-      setStudents(res);
+      // Handle both paginated and non-paginated responses
+      if (res.data && Array.isArray(res.data)) {
+        setStudents(res.data);
+      } else if (Array.isArray(res)) {
+        setStudents(res);
+      } else {
+        setStudents([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load students');
     } finally {

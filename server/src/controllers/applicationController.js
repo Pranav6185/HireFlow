@@ -92,7 +92,10 @@ exports.getMyApplications = async (req, res, next) => {
       return res.status(404).json({ message: 'Student profile not found' });
     }
 
-    const applications = await Application.find({ studentId: student._id })
+    const { parsePagination, createPaginatedResponse, applyPagination } = require('../utils/pagination');
+    const { page, limit, skip } = parsePagination(req);
+
+    const query = Application.find({ studentId: student._id })
       .populate('driveId', 'role ctc stipend roundStructure')
       .populate({
         path: 'driveId',
@@ -103,7 +106,10 @@ exports.getMyApplications = async (req, res, next) => {
       })
       .sort({ submittedAt: -1 });
 
-    res.json(applications);
+    const total = await Application.countDocuments({ studentId: student._id });
+    const applications = await query.skip(skip).limit(limit);
+
+    res.json(createPaginatedResponse(applications, total, page, limit));
   } catch (error) {
     next(error);
   }
